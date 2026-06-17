@@ -17,6 +17,8 @@ from src.file_utils import (
     get_temp_pdf_path,
 )
 
+from src.image_processor import compress_image
+
 
 def initialize_session_state():
     if "extraction_results" not in st.session_state:
@@ -66,12 +68,22 @@ def run_extraction(uploaded_files):
             image_path = save_uploaded_file_to_temp(uploaded_file)
             temp_paths.append(image_path)
 
+            processed_image_path = compress_image(
+            input_path=image_path,
+            max_width=1200,
+            max_height=1600,
+            quality=75,
+            enabled=True
+            )
+            if processed_image_path != image_path:
+                temp_paths.append(processed_image_path)
+
             status.write(
                 f"Processing image {idx}/{len(uploaded_files)}: {uploaded_file.name}"
             )
 
             output = extract_mcq_with_groq(
-                image_path=image_path,
+                image_path=processed_image_path,
                 image_number=idx
             )
 
