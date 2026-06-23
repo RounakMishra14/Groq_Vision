@@ -1,4 +1,7 @@
 import base64
+import time
+from dataclasses import dataclass
+from typing import Optional
 
 from groq import Groq
 
@@ -16,6 +19,16 @@ if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY not found in .env file")
 
 client = Groq(api_key=GROQ_API_KEY)
+
+
+@dataclass
+class GroqExtractionResult:
+    output: str
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    model: str
+    duration_seconds: float
 
 
 # ==========================
@@ -78,17 +91,19 @@ Answer: <visible answer or Not available>
 # Vision Extraction
 # ==========================
 
-def extract_mcq_with_groq(
+def extract_mcq_with_groq_result(
     image_path: str,
-    image_number: int
-) -> str:
+    image_number: int,
+    max_completion_tokens: int = 2048,
+) -> GroqExtractionResult:
     """
-    Extract MCQs from image using Groq Vision.
+    Extract MCQs from image using Groq Vision and return output + token usage.
     """
 
     image_b64 = encode_image_to_base64(image_path)
-
     prompt = build_mcq_prompt(image_number)
+
+    start_time = time.time()
 
     completion = client.chat.completions.create(
         model=MODEL_NAME,
@@ -103,19 +118,49 @@ def extract_mcq_with_groq(
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/png;base64,{image_b64}"
+                            "url": f"data:image/jpeg;base64,{image_b64}"
                         }
                     }
                 ]
             }
         ],
         temperature=0,
-        max_completion_tokens=4096,
+        max_completion_tokens=max_completion_tokens,
         top_p=1,
         stream=False,
     )
 
-    return completion.choices[0].message.content
+    duration = time.time() - start_time
+    usage = getattr(completion, "usage", None)
+
+    prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
+    completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
+    total_tokens = int(getattr(usage, "total_tokens", 0) or 0)
+
+    return GroqExtractionResult(
+        output=completion.choices[0].message.content,
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+        total_tokens=total_tokens,
+        model=MODEL_NAME,
+        duration_seconds=duration,
+    )
+
+
+def extract_mcq_with_groq(
+    image_path: str,
+    image_number: int,
+) -> str:
+    """
+    Backward-compatible wrapper.
+    Existing code expecting only text output can continue using this.
+    """
+
+    result = extract_mcq_with_groq_result(
+        image_path=image_path,
+        image_number=image_number,
+    )
+    return result.output
 
 
 # ==========================
@@ -134,7 +179,7 @@ def process_images(
 
     for idx, image_path in enumerate(image_paths, start=1):
 
-        output = extract_mcq_with_groq(
+        result = extract_mcq_with_groq_result(
             image_path=image_path,
             image_number=idx
         )
@@ -142,7 +187,14 @@ def process_images(
         results.append(
             {
                 "image_number": idx,
-                "output": output
+                "output": result.output,
+                "usage": {
+                    "prompt_tokens": result.prompt_tokens,
+                    "completion_tokens": result.completion_tokens,
+                    "total_tokens": result.total_tokens,
+                    "duration_seconds": result.duration_seconds,
+                    "model": result.model,
+                },
             }
         )
 
