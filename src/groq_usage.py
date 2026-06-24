@@ -6,8 +6,8 @@ Small local usage tracker for Groq calls inside the Streamlit app.
 Important:
 - Groq does not return your full org-level remaining daily quota on every successful call.
 - This tracker shows usage made inside the current Streamlit session.
-- If Groq returns a 429 rate-limit error, the tracker can parse Limit/Used/Requested
-  from the error text and show the actual observed org-level limit state.
+- If Groq returns a 429 rate-limit error, the tracker parses Limit/Used/Requested
+  from the error text and helps the UI show a clean user-friendly message.
 """
 
 from __future__ import annotations
@@ -22,7 +22,8 @@ from typing import Any, Dict, List, Optional
 class GroqLimitConfig:
     model_name: str = "meta-llama/llama-4-scout-17b-16e-instruct"
 
-    # Free/on-demand limits observed from Groq docs for this model.
+    # Free/on-demand limits observed for this model/service tier.
+    # Keep editable because Groq can change model/plan limits.
     rpm_limit: int = 30          # requests per minute
     rpd_limit: int = 1000        # requests per day
     tpm_limit: int = 30000       # tokens per minute
@@ -121,6 +122,10 @@ class GroqUsageTracker:
         return len([c for c in self.calls if c.status == "success"])
 
     @property
+    def failed_requests(self) -> int:
+        return len([c for c in self.calls if c.status == "error"])
+
+    @property
     def total_prompt_tokens(self) -> int:
         return sum(c.prompt_tokens for c in self.calls if c.status == "success")
 
@@ -187,7 +192,6 @@ def parse_groq_rate_limit_error(message: str) -> GroqObservedLimitError:
     msg = str(message or "")
     observed = GroqObservedLimitError(raw_message=msg)
 
-    # Limit type, e.g. TPD / TPM / RPM / RPD
     type_match = re.search(r"\((TPD|TPM|RPM|RPD)\)", msg, flags=re.IGNORECASE)
     if type_match:
         observed.limit_type = type_match.group(1).upper()
@@ -202,8 +206,48 @@ def parse_groq_rate_limit_error(message: str) -> GroqObservedLimitError:
         observed.used = int(limit_match.group(2).replace(",", ""))
         observed.requested = int(limit_match.group(3).replace(",", ""))
 
-    retry_match = re.search(r"Please try again in\s+([^\.]+(?:\.\d+)?s)", msg, flags=re.IGNORECASE)
+    retry_match = re.search(
+        r"Please try again in\s+([^\.]+(?:\.\d+)?s)",
+        msg,
+        flags=re.IGNORECASE,
+    )
     if retry_match:
         observed.retry_after_text = retry_match.group(1)
 
     return observed
+
+
+def build_friendly_groq_error_message(error_message: str) -> str:
+    """
+    Convert raw Groq/Python exceptions into a clean UI message.
+    This deliberately avoids tracebacks and internal file paths.
+    """
+    msg = str(error_message or "")
+    observed = parse_groq_rate_limit_error(msg)
+
+    if observed.limit_type:
+        parts = [f"Groq rate limit reached: {observed.limit_type}."]
+
+        if observed.limit is not None:
+            parts.append(f"Limit: {observed.limit:,}.")
+        if observed.used is not None:
+            parts.append(f"Used: {observed.used:,}.")
+        if observed.requested is not None:
+            parts.append(f"Requested by next image: {observed.requested:,}.")
+        if observed.remaining_before_request is not None:
+            parts.append(f"Remaining before this request: {observed.remaining_before_request:,}.")
+        if observed.retry_after_text:
+            parts.append(f"Try again after {observed.retry_after_text}.")
+
+        parts.append("Partial results are kept and can still be downloaded.")
+        return " ".join(parts)
+
+    lower_msg = msg.lower()
+
+    if "api_key" in lower_msg or "groq_api_key" in lower_msg:
+        return "Groq API key is missing or invalid. Check your .env file and GROQ_API_KEY value."
+
+    if "connection" in lower_msg or "timeout" in lower_msg:
+        return "Groq request failed because of a network/timeout issue. Partial results are kept if available."
+
+    return "Groq request failed. Partial results are kept if available. Check your API key, network, or Groq quota."
