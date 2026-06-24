@@ -40,7 +40,7 @@ class GroqImagePrepConfig:
     # v7 crop defaults
     brightness_threshold: int = 170
     max_saturation: int = 110
-    safety_expand_ratio: float = 0.03
+    safety_expand_ratio: float = 0.07
 
     # Safe production compression defaults
     # W700/Q40 was too aggressive on larger validation.

@@ -29,7 +29,7 @@ class CropConfig:
     brightness_threshold: int = 170
     max_saturation: int = 110
     min_area_ratio: float = 0.08
-    safety_expand_ratio: float = 0.03
+    safety_expand_ratio: float = 0.07
     morph_kernel_ratio: float = 0.018
     debug: bool = False
 
