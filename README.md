@@ -540,11 +540,15 @@ If you have ideas for improving preprocessing, OCR accuracy, token optimization,
 
 ---
 
-# License
+## 📜 License
 
-This project is released under the **MIT License**.
+Copyright © 2026 Rounak Mishra
 
----
+This project is published for portfolio and educational purposes only.
+
+All rights reserved.
+
+No part of this repository may be copied, modified, redistributed, or used commercially without the prior written permission of the author.
 
 # Acknowledgements
 
