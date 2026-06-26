@@ -352,10 +352,16 @@ def apply_dashboard_css() -> None:
             font-weight: 900;
         }
 
-        .stTextInput input, .stSelectbox div[data-baseweb="select"] > div {
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] > div {
             background-color: rgba(0,0,0,0.22) !important;
             color: #eafcff !important;
             border-color: rgba(0, 229, 255, 0.55) !important;
+        }
+        .stTextArea textarea {
+            min-height: 260px !important;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+            font-size: 13px !important;
+            line-height: 1.45 !important;
         }
         .stFileUploader section {
             background: rgba(1, 11, 17, 0.64) !important;
@@ -708,6 +714,8 @@ def run_extraction(
                     "image_number": idx,
                     "file_name": uploaded_file.name,
                     "output": groq_result.output,
+                    "original_output": groq_result.output,
+                    "edited": False,
                     "processing_meta": prep_result.meta,
                     "usage": {
                         "prompt_tokens": groq_result.prompt_tokens,
@@ -825,16 +833,94 @@ def render_results_section() -> None:
         """
         <div class="gv-card">
             <div class="gv-section-title">✅ Extracted Results</div>
-            <div class="gv-caption">Preview of extracted MCQs. You can download everything as a formatted PDF below.</div>
+            <div class="gv-caption">
+                Preview extracted MCQs below. Open an image, click Edit, correct the extracted text,
+                and press Save. The saved edited text will be used in the generated PDF.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    for item in st.session_state.extraction_results:
-        with st.expander(f"Image {item['image_number']}: {item['file_name']}", expanded=True):
-            st.markdown(item["output"].replace("\n", "  \n"))
+    for index, item in enumerate(st.session_state.extraction_results):
+        image_number = item.get("image_number", index + 1)
+        file_name = item.get("file_name", f"Image_{image_number}")
+        output_text = item.get("output", "")
+
+        edit_mode_key = f"edit_mode_result_{index}"
+        edit_text_key = f"edit_text_result_{index}"
+
+        if edit_mode_key not in st.session_state:
+            st.session_state[edit_mode_key] = False
+
+        if edit_text_key not in st.session_state:
+            st.session_state[edit_text_key] = output_text
+
+        edited_badge = "  ✏️ Edited" if item.get("edited") else ""
+
+        with st.expander(
+            f"Image {image_number}: {file_name}{edited_badge}",
+            expanded=False,
+        ):
             usage = item.get("usage", {})
+
+            if st.session_state[edit_mode_key]:
+                edited_text = st.text_area(
+                    "Edit extracted MCQ text",
+                    value=st.session_state[edit_text_key],
+                    height=360,
+                    key=f"edit_area_result_{index}",
+                    help="Edit the extracted question/options/answer text here, then click Save. The PDF will use the saved version.",
+                )
+
+                save_col, cancel_col, spacer_col = st.columns([1, 1, 4], gap="small")
+
+                with save_col:
+                    save_clicked = st.button(
+                        "💾 Save",
+                        key=f"save_edit_result_{index}",
+                        use_container_width=True,
+                    )
+
+                with cancel_col:
+                    cancel_clicked = st.button(
+                        "Cancel",
+                        key=f"cancel_edit_result_{index}",
+                        use_container_width=True,
+                    )
+
+                if save_clicked:
+                    st.session_state.extraction_results[index]["output"] = edited_text
+                    st.session_state.extraction_results[index]["edited"] = True
+                    st.session_state[edit_text_key] = edited_text
+                    st.session_state[edit_mode_key] = False
+                    st.success("Edited text saved. PDF export will use this saved version.")
+                    st.rerun()
+
+                if cancel_clicked:
+                    st.session_state[edit_text_key] = st.session_state.extraction_results[index].get("output", "")
+                    st.session_state[edit_mode_key] = False
+                    st.rerun()
+
+            else:
+                view_col, edit_col = st.columns([5.3, 1], gap="small")
+
+                with view_col:
+                    if item.get("edited"):
+                        st.success("Saved edited version will be used in the PDF.")
+
+                with edit_col:
+                    if st.button(
+                        "✏️ Edit",
+                        key=f"edit_result_{index}",
+                        use_container_width=True,
+                    ):
+                        st.session_state[edit_text_key] = output_text
+                        st.session_state[edit_mode_key] = True
+                        st.rerun()
+
+                st.markdown(output_text.replace("\n", "  \n"))
+
             if usage:
                 st.caption(
                     f"Tokens: {usage.get('total_tokens', 0):,} | "
