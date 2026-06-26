@@ -10,7 +10,7 @@
 ![OpenCV](https://img.shields.io/badge/OpenCV-Image_Processing-orange.svg)
 ![Pillow](https://img.shields.io/badge/Pillow-Imaging-yellow.svg)
 ![SQLite](https://img.shields.io/badge/SQLite-Database-blue.svg)
-![License](https://img.shields.io/badge/License-MIT-brightgreen.svg)
+
 
 </p>
 
