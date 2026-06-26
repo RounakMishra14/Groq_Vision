@@ -71,7 +71,7 @@ A photograph captured using a mobile phone.
 
 <p align="center">
 
-<img src="assets/sample_input.jpg" width="900">
+<img src="assets/sample_input.png" width="900">
 
 </p>
 
