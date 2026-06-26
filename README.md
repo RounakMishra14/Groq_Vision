@@ -50,6 +50,97 @@ The result is a fast, reliable, production-ready system capable of extracting hu
 
 ---
 
+# 📸 End-to-End Example
+
+The following example demonstrates how Groq Vision extracts structured MCQs from a real photograph captured at a steep viewing angle.
+
+Unlike traditional OCR engines that struggle with perspective distortion, Groq Vision understands the document visually and returns well-structured questions and options.
+
+---
+
+## Input Image
+
+A photograph captured using a mobile phone.
+
+- Strong perspective distortion
+- Laptop bezel visible
+- Keyboard visible
+- Background objects present
+- Slight motion blur
+- Off-axis viewing angle
+
+<p align="center">
+
+<img src="assets/sample_input.jpg" width="900">
+
+</p>
+
+---
+
+## Groq Vision Extraction
+
+The image is automatically:
+
+- Screen detected
+- Perspective corrected
+- Cropped
+- Optimized
+- Sent to Groq Vision
+
+The extracted result inside the application:
+
+<p align="center">
+
+<img src="assets/sample_output.png" width="900">
+
+</p>
+
+---
+
+## Result
+
+The extracted output preserves:
+
+- ✅ Question Number
+- ✅ Question Text
+- ✅ Option Labels
+- ✅ Option Ordering
+- ✅ Formatting
+
+while requiring **no manual correction**.
+
+# 🚀 Why Groq Vision Instead of Traditional OCR?
+
+Traditional OCR engines are designed primarily for recognizing characters from clean, flat documents.
+
+Real-world exam photographs often contain:
+
+- Perspective distortion
+- Screen reflections
+- Camera angle
+- Background clutter
+- Laptop bezel
+- Keyboard
+- Low contrast
+- UI elements
+
+These conditions typically reduce OCR accuracy.
+
+Groq Vision approaches the task differently by understanding the image semantically rather than recognizing isolated characters.
+
+As a result, it can accurately reconstruct structured MCQs even from difficult photographs.
+
+| Feature | Traditional OCR | Groq Vision |
+|----------|-----------------|-------------|
+| Perspective handling | ❌ Poor | ✅ Excellent |
+| Tilted laptop screens | ❌ | ✅ |
+| Understands question structure | ❌ | ✅ |
+| Preserves option ordering | ❌ | ✅ |
+| Handles UI elements | ❌ | ✅ |
+| Hallucination prevention prompt | ❌ | ✅ |
+| PDF-ready structured output | ❌ | ✅ |
+
+
 # Application Workflow
 
 ```
@@ -269,6 +360,31 @@ The experiments compared:
 * Processing Time
 
 ---
+# 🎯 Token Optimization Strategy
+
+Unlike many Vision applications that focus solely on image compression, this project prioritizes reducing **irrelevant visual information** before sending data to the model.
+
+The optimization pipeline includes:
+
+1. White screen detection
+2. Perspective correction
+3. Intelligent cropping
+4. Optional resizing
+5. Moderate JPEG compression
+
+Through experimentation, the following observation was made:
+
+> JPEG compression alone significantly reduces file size but has little effect on Groq Vision token usage.
+
+Instead, removing unnecessary visual regions (keyboard, bezel, desk, background) provides substantially greater benefits.
+
+This approach improves:
+
+- Processing speed
+- Vision quality
+- Token efficiency
+- Extraction consistency
+
 
 # Major Research Finding
 
