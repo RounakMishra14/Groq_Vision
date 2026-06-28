@@ -28,6 +28,12 @@ The result is a fast, reliable, production-ready system capable of extracting hu
 
 ---
 
+# Groq Vision
+
+[![Live Demo](https://img.shields.io/badge/🚀-Live%20Demo-00C7FF?style=for-the-badge)](https://groqvision.streamlit.app/)
+
+Batch MCQ Extractor powered by Groq Vision.
+
 # Features
 
 * User Authentication System
