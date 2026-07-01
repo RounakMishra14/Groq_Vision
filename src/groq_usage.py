@@ -226,28 +226,28 @@ def build_friendly_groq_error_message(error_message: str) -> str:
     observed = parse_groq_rate_limit_error(msg)
 
     if observed.limit_type:
-        parts = [f"Groq rate limit reached: {observed.limit_type}."]
+        parts = [f"Groq usage limit reached: {observed.limit_type}."]
 
         if observed.limit is not None:
             parts.append(f"Limit: {observed.limit:,}.")
         if observed.used is not None:
             parts.append(f"Used: {observed.used:,}.")
         if observed.requested is not None:
-            parts.append(f"Requested by next image: {observed.requested:,}.")
+            parts.append(f"Next image requested: {observed.requested:,}.")
         if observed.remaining_before_request is not None:
-            parts.append(f"Remaining before this request: {observed.remaining_before_request:,}.")
+            parts.append(f"Remaining before request: {observed.remaining_before_request:,}.")
         if observed.retry_after_text:
             parts.append(f"Try again after {observed.retry_after_text}.")
 
-        parts.append("Partial results are kept and can still be downloaded.")
+        parts.append("Completed results are still available for review and export.")
         return " ".join(parts)
 
     lower_msg = msg.lower()
 
     if "api_key" in lower_msg or "groq_api_key" in lower_msg:
-        return "Groq API key is missing or invalid. Check your .env file and GROQ_API_KEY value."
+        return "The Groq API key is missing or invalid. Update the saved key and try again."
 
     if "connection" in lower_msg or "timeout" in lower_msg:
-        return "Groq request failed because of a network/timeout issue. Partial results are kept if available."
+        return "The Groq request timed out or lost network connectivity. Completed results are still available."
 
-    return "Groq request failed. Partial results are kept if available. Check your API key, network, or Groq quota."
+    return "The Groq request could not be completed. Check your API key, network connection, or usage quota."

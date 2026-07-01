@@ -92,7 +92,7 @@ def load_or_request_groq_key(username: str) -> str | None:
             return groq_api_key
         except Exception:
             st.session_state.groq_api_key = None
-            st.error("Saved Groq key could not be decrypted. Please save it again.")
+            st.error("Your saved Groq API key could not be decrypted. Please update the key to continue.")
 
     render_api_key_required_page(username)
     return None
@@ -104,32 +104,32 @@ def render_api_key_required_page(username: str) -> None:
     st.markdown(
         """
         <div class="gv-card">
-            <div class="gv-section-title">Groq API Key Required</div>
+            <div class="gv-section-title">Connect Groq API Access</div>
             <div class="gv-caption">
-                Generate your Groq API key once, paste it below, and this app will remember it for your account.
+                Save your Groq API key once to enable secure document extraction for this account.
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.link_button("Get Free Groq API Key", GROQ_KEYS_URL, use_container_width=True)
+    st.link_button("Open Groq API Keys", GROQ_KEYS_URL, use_container_width=True)
 
     with st.form("save_groq_key_form"):
         user_key = st.text_input("Groq API Key", type="password", placeholder="gsk_...")
-        submitted = st.form_submit_button("Save Groq Key", use_container_width=True)
+        submitted = st.form_submit_button("Save API Key", use_container_width=True)
 
     if submitted:
         if not user_key.strip():
-            st.error("Please enter your Groq API key.")
+            st.error("Enter your Groq API key before saving.")
         else:
             save_groq_key(username, encrypt(user_key.strip()))
-            st.success("Groq key saved. Loading app...")
+            st.success("Groq API key saved. Loading your workspace...")
             st.rerun()
 
     st.markdown(
         """
-        <div class="gv-average">Your API key is encrypted before saving and is only used for extraction requests.</div>
+        <div class="gv-average">Your API key is encrypted before storage and used only for requests you initiate.</div>
         """,
         unsafe_allow_html=True,
     )
@@ -156,9 +156,9 @@ def render_upload_and_results(username: str, groq_api_key: str, usage_placeholde
     st.markdown(
         """
         <div class="gv-card">
-            <div class="gv-section-title">Upload MCQ Images</div>
+            <div class="gv-section-title">Upload Source Images</div>
             <div class="gv-caption">
-                Upload up to 30 images. The app will crop/compress them, extract visible MCQs, and keep token usage per user.
+                Upload up to 30 PNG or JPEG images. The app prepares each image, extracts visible multiple-choice content, and tracks usage for your account.
             </div>
         </div>
         """,
@@ -166,7 +166,7 @@ def render_upload_and_results(username: str, groq_api_key: str, usage_placeholde
     )
 
     uploaded_files = st.file_uploader(
-        "Upload PNG, JPG, or JPEG files",
+        "Select PNG or JPEG images",
         type=["png", "jpg", "jpeg"],
         accept_multiple_files=True,
         key=f"uploaded_images_{st.session_state.upload_widget_key}",
@@ -174,17 +174,17 @@ def render_upload_and_results(username: str, groq_api_key: str, usage_placeholde
 
     uploaded_count = len(uploaded_files) if uploaded_files else 0
     if uploaded_count > MAX_IMAGES:
-        st.error(f"Please upload maximum {MAX_IMAGES} images only.")
+        st.error(f"Upload no more than {MAX_IMAGES} images at a time.")
     elif uploaded_count:
-        st.success(f"{uploaded_count} image(s) ready.")
+        st.success(f"{uploaded_count} image(s) queued for extraction.")
 
     action_col_1, action_col_2, _ = st.columns([1, 1.35, 2.2], gap="large")
 
     with action_col_1:
-        extract_clicked = st.button("Extract MCQs", type="primary", use_container_width=True)
+        extract_clicked = st.button("Start Extraction", type="primary", use_container_width=True)
 
     with action_col_2:
-        clear_clicked = st.button("Clear Uploaded Images", use_container_width=True)
+        clear_clicked = st.button("Clear Uploads", use_container_width=True)
 
     if clear_clicked:
         st.session_state.upload_widget_key += 1
@@ -193,9 +193,9 @@ def render_upload_and_results(username: str, groq_api_key: str, usage_placeholde
 
     if extract_clicked:
         if not uploaded_files:
-            st.warning("Please upload at least one image first.")
+            st.warning("Upload at least one image before starting extraction.")
         elif len(uploaded_files) > MAX_IMAGES:
-            st.error(f"Please upload maximum {MAX_IMAGES} images only.")
+            st.error(f"Upload no more than {MAX_IMAGES} images at a time.")
         else:
             run_extraction(
                 uploaded_files=uploaded_files,

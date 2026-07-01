@@ -341,7 +341,7 @@ def render_login_hero() -> None:
         """
 <div class="groq-hero">
     <div class="groq-title">Groq Vision</div>
-    <div class="groq-subtitle">Batch MCQ Extractor</div>
+    <div class="groq-subtitle">Batch Multiple-Choice Extraction</div>
     <div class="groq-line"></div>
 </div>
         """,
@@ -354,7 +354,7 @@ def render_hero_header() -> None:
         """
         <div class="gv-hero">
             <div class="gv-title">Groq Vision</div>
-            <div class="gv-subtitle">Batch MCQ Extractor</div>
+            <div class="gv-subtitle">Batch Multiple-Choice Extraction</div>
             <div class="gv-line"></div>
         </div>
         """,
@@ -368,37 +368,37 @@ def render_login_page() -> None:
     render_login_api_key_card()
     render_login_register_card()
     render_login_security_card()
-    st.markdown('<div class="login-footer">Secure. Fast. Powered by Groq.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-footer">Secure extraction workflow powered by Groq.</div>', unsafe_allow_html=True)
 
 
 def render_login_api_key_card() -> None:
     with st.container(border=True):
-        st.markdown("### Need a Groq API Key?")
-        st.write("Generate your free Groq API key here:")
-        st.link_button("Get Free Groq API Key", GROQ_KEYS_URL)
+        st.markdown("### Groq API Access")
+        st.write("Create or manage your Groq API key before processing documents.")
+        st.link_button("Open Groq API Keys", GROQ_KEYS_URL)
         st.caption(
-            "After creating the key, return here and log in. "
-            "Your Groq key will be requested after successful login."
+            "After signing in, you can save the key once for your account. "
+            "It will be encrypted before storage."
         )
 
 
 def render_login_register_card() -> None:
     with st.container(border=True):
-        tabs = st.tabs(["Login", "Create New Account"])
+        tabs = st.tabs(["Sign In", "Create Account"])
 
         with tabs[0]:
             with st.form("login_form", clear_on_submit=False):
                 username = st.text_input("Email", key="login_email")
                 password = st.text_input("Password", type="password", key="login_password")
-                submitted = st.form_submit_button("Login")
+                submitted = st.form_submit_button("Sign In")
 
                 if submitted:
                     if not username.strip() or not password:
-                        st.error("Email and password required")
+                        st.error("Enter your email and password to continue.")
                     elif login_user(username, password):
                         st.rerun()
                     else:
-                        st.error("Invalid login")
+                        st.error("The email or password is incorrect.")
 
         with tabs[1]:
             with st.form("register_form", clear_on_submit=False):
@@ -409,21 +409,20 @@ def render_login_register_card() -> None:
 
                 if submitted:
                     if not username.strip() or not password:
-                        st.error("Email and password required")
+                        st.error("Enter an email and password to create an account.")
                     elif password != confirm:
-                        st.error("Passwords do not match")
+                        st.error("The password confirmation does not match.")
                     elif register_user(username, password):
-                        st.success("Account created. Please login now.")
+                        st.success("Account created. You can now sign in.")
                     else:
-                        st.error("User already exists")
+                        st.error("An account with this email already exists.")
 
 
 def render_login_security_card() -> None:
     with st.container(border=True):
-        st.markdown("### Secure. Fast. Powered by Groq.")
+        st.markdown("### Private by Design")
         st.caption(
-            "Your API key is encrypted and stored securely. "
-            "It is only used to process your uploaded MCQ images."
+            "Your API key is encrypted before storage and used only for extraction requests you start."
         )
 
 
@@ -442,9 +441,9 @@ def render_profile_actions(username: str) -> None:
     st.caption("Signed in as")
     st.code(username, language=None)
 
-    st.success("Groq API key saved")
+    st.success("Groq API key is saved")
 
-    st.markdown("**Lifetime Usage**")
+    st.markdown("**Account Usage**")
     usage_a, usage_b = st.columns(2)
     with usage_a:
         st.metric("Requests", f"{summary['total_requests']:,}")
@@ -460,19 +459,19 @@ def render_profile_actions(username: str) -> None:
     st.divider()
 
     with st.form("change_groq_key_form"):
-        new_key = st.text_input("Change Groq API Key", type="password", placeholder="Paste new gsk_... key")
-        save_clicked = st.form_submit_button("Save New API Key", use_container_width=True)
+        new_key = st.text_input("Update Groq API Key", type="password", placeholder="Paste a new gsk_... key")
+        save_clicked = st.form_submit_button("Save API Key", use_container_width=True)
 
     if save_clicked:
         if not new_key.strip():
-            st.error("Please enter a new Groq API key.")
+            st.error("Enter a Groq API key before saving.")
         else:
             save_groq_key(username, encrypt(new_key.strip()))
             st.session_state.groq_api_key = new_key.strip()
             st.success("Groq API key updated.")
             st.rerun()
 
-    if st.button("Logout", use_container_width=True):
+    if st.button("Sign Out", use_container_width=True):
         logout()
 
 
@@ -490,7 +489,7 @@ def _usage_tile(label: str, used: int, limit: int, remaining: int) -> str:
     <div class="gv-usage-tile">
         <div class="gv-usage-label">{label}</div>
         <div class="gv-usage-value">{_format_number(used)} / {_format_number(limit)}</div>
-        <div class="gv-usage-left">{_format_number(remaining)} left</div>
+        <div class="gv-usage-left">{_format_number(remaining)} remaining</div>
     </div>
     """
 
@@ -503,8 +502,8 @@ def render_groq_usage_panel(groq_api_key: str) -> None:
     st.markdown(
         f"""
         <div class="gv-card">
-            <div class="gv-section-title">Session Usage</div>
-            <div class="gv-caption">Live usage for this current browser session.</div>
+            <div class="gv-section-title">Usage Monitor</div>
+            <div class="gv-caption">Live request and token usage for this session.</div>
             <div class="gv-caption"><b>Model:</b> <span class="gv-model-pill">{limits.model_name}</span></div>
         </div>
         """,
@@ -534,27 +533,26 @@ def render_groq_usage_panel(groq_api_key: str) -> None:
         )
 
     if tracker.failed_requests:
-        st.warning(f"Failed Groq requests in this session: **{tracker.failed_requests}**")
+        st.warning(f"Failed extraction requests this session: **{tracker.failed_requests}**")
 
     if tracker.last_limit_error:
         err = tracker.last_limit_error
         st.error(
-            f"Last limit hit: **{err.limit_type}** | Limit: **{err.limit:,}** | "
+            f"Most recent limit event: **{err.limit_type}** | Limit: **{err.limit:,}** | "
             f"Used: **{err.used:,}** | Requested: **{err.requested:,}** | "
             f"Remaining before request: **{err.remaining_before_request:,}**"
         )
         if err.retry_after_text:
-            st.warning(f"Groq suggested retry after: **{err.retry_after_text}**")
+            st.warning(f"Suggested retry window: **{err.retry_after_text}**")
 
 
 def render_results_section() -> None:
     st.markdown(
         """
         <div class="gv-card">
-            <div class="gv-section-title">Extracted Results</div>
+            <div class="gv-section-title">Review Extracted Content</div>
             <div class="gv-caption">
-                Preview extracted MCQs below. Open an image, click Edit, correct the extracted text,
-                and press Save. The saved edited text will be used in the generated PDF.
+                Review each extraction, make any corrections, and save edits before exporting the PDF.
             </div>
         </div>
         """,
@@ -585,11 +583,11 @@ def render_results_section() -> None:
 
             if st.session_state[edit_mode_key]:
                 edited_text = st.text_area(
-                    "Edit extracted MCQ text",
+                    "Edit extracted text",
                     value=st.session_state[edit_text_key],
                     height=360,
                     key=f"edit_area_result_{index}",
-                    help="Edit the extracted question/options/answer text here, then click Save. The PDF will use the saved version.",
+                    help="Review or correct the extracted text. Saved edits are used in the PDF export.",
                 )
 
                 save_col, cancel_col, _ = st.columns([1, 1, 4], gap="small")
@@ -613,7 +611,7 @@ def render_results_section() -> None:
                     st.session_state.extraction_results[index]["edited"] = True
                     st.session_state[edit_text_key] = edited_text
                     st.session_state[edit_mode_key] = False
-                    st.success("Edited text saved. PDF export will use this saved version.")
+                    st.success("Edits saved. The PDF export will use the updated text.")
                     st.rerun()
 
                 if cancel_clicked:
@@ -626,7 +624,7 @@ def render_results_section() -> None:
 
                 with view_col:
                     if item.get("edited"):
-                        st.success("Saved edited version will be used in the PDF.")
+                        st.success("Edited version saved for PDF export.")
 
                 with edit_col:
                     if st.button(
@@ -643,9 +641,9 @@ def render_results_section() -> None:
             if usage:
                 st.caption(
                     f"Tokens: {usage.get('total_tokens', 0):,} | "
-                    f"Input: {usage.get('prompt_tokens', 0):,} | "
-                    f"Output: {usage.get('completion_tokens', 0):,} | "
-                    f"Time: {usage.get('duration_seconds', 0)}s"
+                    f"Prompt: {usage.get('prompt_tokens', 0):,} | "
+                    f"Completion: {usage.get('completion_tokens', 0):,} | "
+                    f"Duration: {usage.get('duration_seconds', 0)}s"
                 )
 
 
@@ -653,7 +651,7 @@ def render_pdf_download_section() -> None:
     st.markdown(
         """
         <div class="gv-card">
-            <div class="gv-section-title">Generate PDF</div>
+            <div class="gv-section-title">Export PDF</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -662,7 +660,7 @@ def render_pdf_download_section() -> None:
     col_name, col_theme = st.columns([1.2, 0.8], gap="large")
 
     with col_name:
-        pdf_name = st.text_input("File Name", value=DEFAULT_PDF_NAME)
+        pdf_name = st.text_input("PDF File Name", value=DEFAULT_PDF_NAME)
 
     with col_theme:
         pdf_theme = st.selectbox("PDF Theme", PDF_THEMES)
@@ -672,7 +670,7 @@ def render_pdf_download_section() -> None:
 
     with open(pdf_path, "rb") as f:
         st.download_button(
-            label="Generate & Download PDF",
+            label="Download PDF",
             data=f.read(),
             file_name=f"{pdf_name}.pdf",
             mime="application/pdf",

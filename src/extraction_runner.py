@@ -31,7 +31,7 @@ def run_extraction(
 
     try:
         for idx, uploaded_file in enumerate(uploaded_files, start=1):
-            status.write(f"Preparing image {idx}/{len(uploaded_files)}: {uploaded_file.name}")
+            status.write(f"Preparing image {idx} of {len(uploaded_files)}: {uploaded_file.name}")
 
             image_path = save_uploaded_file_to_temp(uploaded_file)
             temp_paths.append(image_path)
@@ -39,15 +39,15 @@ def run_extraction(
             try:
                 prep_result = prepare_image_for_groq(image_path, prep_config)
             except Exception as prep_error:
-                st.warning(f"Image preparation failed for `{uploaded_file.name}`. This image was skipped.")
-                with st.expander("Show image preparation error"):
+                st.warning(f"`{uploaded_file.name}` could not be prepared and was skipped.")
+                with st.expander("View preparation details"):
                     st.exception(prep_error)
                 continue
 
             processed_image_path = prep_result.output_path
             temp_paths.append(processed_image_path)
 
-            status.write(f"Extracting MCQs from image {idx}/{len(uploaded_files)}: {uploaded_file.name}")
+            status.write(f"Extracting content from image {idx} of {len(uploaded_files)}: {uploaded_file.name}")
 
             try:
                 groq_result = extract_mcq_with_groq_result(
@@ -84,8 +84,8 @@ def run_extraction(
 
                 clean_message = build_friendly_groq_error_message(raw_error_text)
                 st.error(clean_message)
-                st.info("Extraction stopped safely. Already extracted MCQs are kept below for PDF download.")
-                with st.expander("Show technical error"):
+                st.info("Extraction stopped. Completed results remain available for review and export.")
+                with st.expander("View technical details"):
                     st.exception(groq_error)
                 break
 
@@ -139,16 +139,16 @@ def run_extraction(
                 time.sleep(DELAY_SECONDS)
 
         if results:
-            st.success("Extraction completed or stopped with partial results available.")
+            st.success("Extraction finished. Review the results below before exporting.")
         else:
-            st.warning("No MCQs were extracted in this run.")
+            st.warning("No extractable content was produced from this batch.")
 
     except Exception as app_error:
         if results:
             st.session_state.extraction_results = results
-            st.warning("Stopped early, but partial results are available for PDF download.")
-        st.error("Something went wrong during extraction. The app handled it safely without losing completed results.")
-        with st.expander("Show technical error"):
+            st.warning("Processing stopped early. Completed results are still available below.")
+        st.error("Extraction could not be completed. Any completed results have been preserved.")
+        with st.expander("View technical details"):
             st.exception(app_error)
 
     finally:

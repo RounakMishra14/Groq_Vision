@@ -27,7 +27,7 @@ DELAY_SECONDS = 3
 # PDF Settings
 # =========================
 
-DEFAULT_PDF_NAME = "Extracted_MCQs"
+DEFAULT_PDF_NAME = "Extracted_Questions"
 
 PDF_THEMES = [
     "Light",
