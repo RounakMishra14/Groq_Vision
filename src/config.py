@@ -11,6 +11,8 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 MODEL_NAME = "meta-llama/llama-4-scout-17b-16e-instruct"
 
+GROQ_KEYS_URL = "https://console.groq.com/keys"
+
 # =========================
 # Application Settings
 # =========================
